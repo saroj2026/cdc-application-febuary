@@ -1,0 +1,392 @@
+﻿{
+    "value":  [
+                  {
+                      "id":  "b8fa80ef-dd00-4635-82f5-6ea499c646cf",
+                      "name":  "pipeline-feb-11",
+                      "source_connection_id":  "6c064ee0-62c0-483b-aed0-dce7782a4b61",
+                      "target_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "source_database":  "cdctest",
+                      "source_schema":  "public",
+                      "source_tables":  [
+                                            "dpt"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "dbo",
+                      "target_tables":  [
+                                            "dpt"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "dpt",
+                                                 "target_table":  "dpt",
+                                                 "source_schema":  "public",
+                                                 "target_schema":  "dbo"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "RUNNING",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "RUNNING",
+                      "debezium_connector_name":  "cdc-pipeline-feb-11-pg-public",
+                      "sink_connector_name":  "sink-pipeline-feb-11-mssql-dbo",
+                      "kafka_topics":  [
+                                           "pipeline-feb-11.public.dpt"
+                                       ],
+                      "created_at":  "2026-02-11T10:30:55.924566",
+                      "updated_at":  "2026-02-13T09:18:16.400624"
+                  },
+                  {
+                      "id":  "c63cff86-92ef-4e50-b550-12c2c918d7fc",
+                      "name":  "pipeline-8",
+                      "source_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "target_connection_id":  "6c064ee0-62c0-483b-aed0-dce7782a4b61",
+                      "source_database":  "cdctest",
+                      "source_schema":  "dbo",
+                      "source_tables":  [
+                                            "Orders"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "public",
+                      "target_tables":  [
+                                            "Orders"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+                                                   "Orders":  "Orders"
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "Orders",
+                                                 "target_table":  "Orders",
+                                                 "source_schema":  "dbo",
+                                                 "target_schema":  "public"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "RUNNING",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "RUNNING",
+                      "debezium_connector_name":  "cdc-pipeline-8-mssql-dbo",
+                      "sink_connector_name":  "sink-pipeline-8-pg-public",
+                      "kafka_topics":  [
+                                           "pipeline-8.cdctest.dbo.Orders"
+                                       ],
+                      "created_at":  "2026-02-10T10:18:09.981734",
+                      "updated_at":  "2026-02-12T23:44:17.730323"
+                  },
+                  {
+                      "id":  "3ac19c35-f547-4885-93df-3e9e86aa526c",
+                      "name":  "pipeline-7",
+                      "source_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "target_connection_id":  "6c064ee0-62c0-483b-aed0-dce7782a4b61",
+                      "source_database":  "cdctest",
+                      "source_schema":  "dbo",
+                      "source_tables":  [
+                                            "Orders"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "public",
+                      "target_tables":  [
+                                            "Orders"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+                                                   "Orders":  "Orders"
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "Orders",
+                                                 "target_table":  "Orders",
+                                                 "source_schema":  "dbo",
+                                                 "target_schema":  "public"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "RUNNING",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "RUNNING",
+                      "debezium_connector_name":  "cdc-pipeline-7-mssql-dbo",
+                      "sink_connector_name":  "sink-pipeline-7-pg-public",
+                      "kafka_topics":  [
+                                           "pipeline-7.cdctest.dbo.Orders"
+                                       ],
+                      "created_at":  "2026-02-10T10:08:10.539227",
+                      "updated_at":  "2026-02-12T23:43:55.528451"
+                  },
+                  {
+                      "id":  "8dc8df67-b081-42f1-a4f2-a932e529ac70",
+                      "name":  "pipeline-6",
+                      "source_connection_id":  "2ac747c6-2e03-4ff7-954d-0f239e519193",
+                      "target_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "source_database":  "QGPL",
+                      "source_schema":  "SEGMETRIQ1",
+                      "source_tables":  [
+                                            "MYTABLE"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "dbo",
+                      "target_tables":  [
+                                            "MYTABLE"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+                                                   "MYTABLE":  "MYTABLE"
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "MYTABLE",
+                                                 "target_table":  "MYTABLE",
+                                                 "source_schema":  "SEGMETRIQ1",
+                                                 "target_schema":  "dbo"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "RUNNING",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "RUNNING",
+                      "debezium_connector_name":  "cdc-pipeline-6-as400-segmetriq1",
+                      "sink_connector_name":  "sink-pipeline-6-mssql-dbo",
+                      "kafka_topics":  [
+                                           "pipeline-6.SEGMETRIQ1.MYTABLE"
+                                       ],
+                      "created_at":  "2026-02-10T06:03:28.882309",
+                      "updated_at":  "2026-02-12T23:05:09.721584"
+                  },
+                  {
+                      "id":  "dbe2e75f-3b7c-4c05-8c68-bd07b609d5f2",
+                      "name":  "pipeline-5",
+                      "source_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "target_connection_id":  "6c064ee0-62c0-483b-aed0-dce7782a4b61",
+                      "source_database":  "cdctest",
+                      "source_schema":  "dbo",
+                      "source_tables":  [
+                                            "customer2"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "public",
+                      "target_tables":  [
+                                            "customer2"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "customer2",
+                                                 "target_table":  "customer2",
+                                                 "source_schema":  "dbo",
+                                                 "target_schema":  "public"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "RUNNING",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "RUNNING",
+                      "debezium_connector_name":  "cdc-pipeline-5-mssql-dbo",
+                      "sink_connector_name":  "sink-pipeline-5-pg-public",
+                      "kafka_topics":  [
+                                           "pipeline-5.cdctest.dbo.customer2"
+                                       ],
+                      "created_at":  "2026-02-10T05:32:54.683413",
+                      "updated_at":  "2026-02-16T05:56:32.861781"
+                  },
+                  {
+                      "id":  "2e527554-33ae-454d-b8bb-eb16517af8d3",
+                      "name":  "pipeline-4",
+                      "source_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "target_connection_id":  "6c064ee0-62c0-483b-aed0-dce7782a4b61",
+                      "source_database":  "cdctest",
+                      "source_schema":  "dbo",
+                      "source_tables":  [
+                                            "customers"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "public",
+                      "target_tables":  [
+                                            "customers"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "customers",
+                                                 "target_table":  "customers",
+                                                 "source_schema":  "dbo",
+                                                 "target_schema":  "public"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "PAUSED",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "PAUSED",
+                      "debezium_connector_name":  "cdc-pipeline-4-mssql-dbo",
+                      "sink_connector_name":  "sink-pipeline-4-pg-public",
+                      "kafka_topics":  [
+                                           "pipeline-4.cdctest.dbo.customers"
+                                       ],
+                      "created_at":  "2026-02-10T04:35:40.892417",
+                      "updated_at":  "2026-02-12T23:22:38.520269"
+                  },
+                  {
+                      "id":  "6c0b0cdc-0b79-45d2-bb60-c57beb12f859",
+                      "name":  "pipeline3",
+                      "source_connection_id":  "6c064ee0-62c0-483b-aed0-dce7782a4b61",
+                      "target_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "source_database":  "cdctest",
+                      "source_schema":  "public",
+                      "source_tables":  [
+                                            "employees1"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "dbo",
+                      "target_tables":  [
+                                            "employees1"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "employees1",
+                                                 "target_table":  "employees1",
+                                                 "source_schema":  "public",
+                                                 "target_schema":  "dbo"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "PAUSED",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "PAUSED",
+                      "debezium_connector_name":  "cdc-pipeline3-pg-public",
+                      "sink_connector_name":  "sink-pipeline3-mssql-dbo",
+                      "kafka_topics":  [
+                                           "pipeline3.public.employees1"
+                                       ],
+                      "created_at":  "2026-02-09T12:18:59.362933",
+                      "updated_at":  "2026-02-12T23:22:48.937288"
+                  },
+                  {
+                      "id":  "acc52bb1-e5e5-4a4f-aa6a-7aed85b254ed",
+                      "name":  "pipeline2",
+                      "source_connection_id":  "6c064ee0-62c0-483b-aed0-dce7782a4b61",
+                      "target_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "source_database":  "cdctest",
+                      "source_schema":  "public",
+                      "source_tables":  [
+                                            "employees"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "dbo",
+                      "target_tables":  [
+                                            "employees"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "employees",
+                                                 "target_table":  "employees",
+                                                 "source_schema":  "public",
+                                                 "target_schema":  "dbo"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "STOPPED",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "STOPPED",
+                      "debezium_connector_name":  "cdc-pipeline2-pg-public",
+                      "sink_connector_name":  "sink-pipeline2-mssql-dbo",
+                      "kafka_topics":  [
+                                           "pipeline2.public.employees"
+                                       ],
+                      "created_at":  "2026-02-09T11:45:56.745292",
+                      "updated_at":  "2026-02-12T23:22:54.597307"
+                  },
+                  {
+                      "id":  "ae6a03ec-e529-438c-b4e0-ff614a40b039",
+                      "name":  "pipeline-1",
+                      "source_connection_id":  "6c064ee0-62c0-483b-aed0-dce7782a4b61",
+                      "target_connection_id":  "94e14199-6d54-4f2d-822b-f58efc9b01d0",
+                      "source_database":  "cdctest",
+                      "source_schema":  "public",
+                      "source_tables":  [
+                                            "department"
+                                        ],
+                      "target_database":  "cdctest",
+                      "target_schema":  "dbo",
+                      "target_tables":  [
+                                            "department"
+                                        ],
+                      "mode":  "full_load_and_cdc",
+                      "enable_full_load":  true,
+                      "cdc_enabled":  true,
+                      "full_load_type":  "overwrite",
+                      "auto_create_target":  true,
+                      "target_table_mapping":  {
+
+                                               },
+                      "table_mappings":  [
+                                             {
+                                                 "source_table":  "department",
+                                                 "target_table":  "department",
+                                                 "source_schema":  "public",
+                                                 "target_schema":  "dbo"
+                                             }
+                                         ],
+                      "table_filter":  null,
+                      "status":  "ERROR",
+                      "full_load_status":  "COMPLETED",
+                      "cdc_status":  "STARTING",
+                      "debezium_connector_name":  "cdc-pipeline-1-pg-public",
+                      "sink_connector_name":  "sink-pipeline-1-mssql-dbo",
+                      "kafka_topics":  [
+                                           "pipeline-1.public.department"
+                                       ],
+                      "created_at":  "2026-01-19T12:20:12.525667",
+                      "updated_at":  "2026-02-12T20:01:35.180430"
+                  }
+              ],
+    "Count":  9
+}

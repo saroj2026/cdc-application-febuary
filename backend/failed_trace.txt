@@ -1,0 +1,47 @@
+{
+  "name": "cdc-pipeline-feb-11-pg-public",
+  "connector": {
+    "state": "RUNNING",
+    "worker_id": "kafka-connect-cdc:8083"
+  },
+  "tasks": [
+    {
+      "id": 0,
+      "state": "FAILED",
+      "worker_id": "kafka-connect-cdc:8083",
+      "trace": "org.apache.kafka.connect.errors.ConnectException: Unable to create filtered publication pipeline-feb-11_pub for \"public\".\"dpt\"\n\tat io.debezium.connector.postgresql.connection.PostgresReplicationConnection.createOrUpdatePublicationModeFilterted(PostgresReplicationConnection.java:227)\n\tat io.debezium.connector.postgresql.connection.PostgresReplicationConnection.initPublication(PostgresReplicationConnection.java:171)\n\tat io.debezium.connector.postgresql.connection.PostgresReplicationConnection.createReplicationSlot(PostgresReplicationConnection.java:521)\n\tat io.debezium.connector.postgresql.PostgresConnectorTask.start(PostgresConnectorTask.java:170)\n\tat io.debezium.connector.common.BaseSourceTask.start(BaseSourceTask.java:227)\n\tat org.apache.kafka.connect.runtime.AbstractWorkerSourceTask.initializeAndStart(AbstractWorkerSourceTask.java:280)\n\tat org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:202)\n\tat org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:259)\n\tat org.apache.kafka.connect.runtime.AbstractWorkerSourceTask.run(AbstractWorkerSourceTask.java:77)\n\tat org.apache.kafka.connect.runtime.isolation.Plugins.lambda$withClassLoader$1(Plugins.java:237)\n\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)\n\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)\n\tat java.base/java.lang.Thread.run(Thread.java:840)\nCaused by: org.postgresql.util.PSQLException: ERROR: syntax error at or near \"-\"\n  Position: 28\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2713)\n\tat org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2401)\n\tat org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:368)\n\tat org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:498)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:415)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:335)\n\tat org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:321)\n\tat org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:297)\n\tat org.postgresql.jdbc.PgStatement.execute(PgStatement.java:292)\n\tat io.debezium.connector.postgresql.connection.PostgresReplicationConnection.createOrUpdatePublicationModeFilterted(PostgresReplicationConnection.java:224)\n\t... 14 more\n"
+    }
+  ],
+  "type": "source"
+}
+
+Task 0 FAILED:
+org.apache.kafka.connect.errors.ConnectException: Unable to create filtered publication pipeline-feb-11_pub for "public"."dpt"
+	at io.debezium.connector.postgresql.connection.PostgresReplicationConnection.createOrUpdatePublicationModeFilterted(PostgresReplicationConnection.java:227)
+	at io.debezium.connector.postgresql.connection.PostgresReplicationConnection.initPublication(PostgresReplicationConnection.java:171)
+	at io.debezium.connector.postgresql.connection.PostgresReplicationConnection.createReplicationSlot(PostgresReplicationConnection.java:521)
+	at io.debezium.connector.postgresql.PostgresConnectorTask.start(PostgresConnectorTask.java:170)
+	at io.debezium.connector.common.BaseSourceTask.start(BaseSourceTask.java:227)
+	at org.apache.kafka.connect.runtime.AbstractWorkerSourceTask.initializeAndStart(AbstractWorkerSourceTask.java:280)
+	at org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:202)
+	at org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:259)
+	at org.apache.kafka.connect.runtime.AbstractWorkerSourceTask.run(AbstractWorkerSourceTask.java:77)
+	at org.apache.kafka.connect.runtime.isolation.Plugins.lambda$withClassLoader$1(Plugins.java:237)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+Caused by: org.postgresql.util.PSQLException: ERROR: syntax error at or near "-"
+  Position: 28
+	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2713)
+	at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2401)
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:368)
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:498)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:415)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:335)
+	at org.postgresql.jdbc.PgStatement.executeCachedSql(PgStatement.java:321)
+	at org.postgresql.jdbc.PgStatement.executeWithFlags(PgStatement.java:297)
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:292)
+	at io.debezium.connector.postgresql.connection.PostgresReplicationConnection.createOrUpdatePublicationModeFilterted(PostgresReplicationConnection.java:224)
+	... 14 more

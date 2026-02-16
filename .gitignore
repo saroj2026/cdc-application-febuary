@@ -1,0 +1,121 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+env/
+ENV/
+.venv
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# Logs
+*.log
+logs/
+kafka/logs/
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+build/
+.npm
+.pnpm-store/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Long filename directories (Windows path length limit)
+backend/confluentinc-kafka-connect-s3-11.0.8/
+
+# Next.js build files
+frontend/.next/
+frontend/out/
+frontend/.vercel
+
+# Secrets and tokens
+*.pat
+*.key
+*.pem
+*.p8
+*.p12
+secrets/
+credentials/
+# Snowflake keys (explicit)
+snowflake_rsa_key.p8
+snowflake_rsa_key.pub
+snowflake_public_key_for_sql.txt
+
+# Kafka
+kafka/logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Coverage reports
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Alembic
+alembic.ini.bak
+
+# Test files
+test_*.py
+*_test.py
+
+# Documentation builds
+docs/_build/
+
+# Jupyter
+.ipynb_checkpoints/
+.git-rewrite/

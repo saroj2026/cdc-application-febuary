@@ -1,0 +1,575 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(.light *));
+
+:root {
+  /* Light theme colors - Zoom-like clean aesthetic */
+  --background: #ffffff;
+  --foreground: #1a1d21;
+
+  /* Cards with subtle shadows instead of borders */
+  --card: #ffffff;
+  --card-foreground: #1a1d21;
+
+  --popover: #ffffff;
+  --popover-foreground: #1a1d21;
+
+  /* Zoom Blue */
+  --primary: #0b5cff;
+  --primary-foreground: #ffffff;
+
+  /* Secondary */
+  --secondary: #f0f4fa;
+  --secondary-foreground: #0b5cff;
+
+  --muted: #f5f5f5;
+  --muted-foreground: #747474;
+
+  --accent: #f0f4fa;
+  --accent-foreground: #0b5cff;
+
+  --destructive: #E01E5A;
+  --destructive-foreground: #ffffff;
+
+  --border: #e4e7eb;
+  --input: #f5f5f5;
+  --ring: #0b5cff;
+
+  /* Chart colors - clear and distinct */
+  --chart-1: #0b5cff;
+  --chart-2: #00bfa5;
+  --chart-3: #ffaa00;
+  --chart-4: #e01e5a;
+  --chart-5: #8c8c8c;
+
+  --radius: 0.5rem;
+
+  /* Sidebar */
+  --sidebar: #f7f9fa;
+  --sidebar-foreground: #1a1d21;
+  --sidebar-primary: #0b5cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8ebed;
+  --sidebar-accent-foreground: #0b5cff;
+  --sidebar-border: #e4e7eb;
+  --sidebar-ring: #0b5cff;
+
+  --surface: #ffffff;
+  --surface-hover: #f7f9fa;
+  --foreground-muted: #747474;
+
+  --info: #0b5cff;
+  --success: #00bfa5;
+  --warning: #ffaa00;
+  --error: #E01E5A;
+}
+
+.dark {
+  /* Dark theme - deeply distinct but not pitch black */
+  --background: #1a1d21;
+  --foreground: #ffffff;
+
+  --card: #222529;
+  --card-foreground: #ffffff;
+
+  --popover: #222529;
+  --popover-foreground: #ffffff;
+
+  --primary: #2d81ff;
+  --primary-foreground: #ffffff;
+
+  --secondary: #35383c;
+  --secondary-foreground: #2d81ff;
+
+  --muted: #2c2f33;
+  --muted-foreground: #9b9ea1;
+
+  --accent: #35383c;
+  --accent-foreground: #2d81ff;
+
+  --destructive: #E01E5A;
+  --destructive-foreground: #ffffff;
+
+  --border: #35383c;
+  --input: #2c2f33;
+  --ring: #2d81ff;
+
+  --chart-1: #2d81ff;
+  --chart-2: #00d2b6;
+  --chart-3: #ffb72b;
+  --chart-4: #ff4d7d;
+  --chart-5: #a0a0a0;
+
+  --sidebar: #131619;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #2d81ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #35383c;
+  --sidebar-accent-foreground: #white;
+  --sidebar-border: #2c2f33;
+  --sidebar-ring: #2d81ff;
+
+  --surface: #222529;
+  --surface-hover: #2c2f33;
+  --foreground-muted: #9b9ea1;
+
+  --info: #2d81ff;
+  --success: #00d2b6;
+  --warning: #ffb72b;
+  --error: #ff4d7d;
+}
+
+.light {
+  /* Explicit light theme overrides if needed, otherwise uses :root defaults */
+  --background: #ffffff;
+  --foreground: #1a1d21;
+  --card: #ffffff;
+  --card-foreground: #1a1d21;
+  --popover: #ffffff;
+  --popover-foreground: #1a1d21;
+  --primary: #0b5cff;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f4fa;
+  --secondary-foreground: #0b5cff;
+  --muted: #f5f5f5;
+  --muted-foreground: #747474;
+  --accent: #f0f4fa;
+  --accent-foreground: #0b5cff;
+  --destructive: #E01E5A;
+  --destructive-foreground: #ffffff;
+  --border: #e4e7eb;
+  --input: #f5f5f5;
+  --ring: #0b5cff;
+
+  --chart-1: #0b5cff;
+  --chart-2: #00bfa5;
+  --chart-3: #ffaa00;
+  --chart-4: #e01e5a;
+  --chart-5: #8c8c8c;
+
+  --sidebar: #f7f9fa;
+  --sidebar-foreground: #1a1d21;
+  --sidebar-primary: #0b5cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8ebed;
+  --sidebar-accent-foreground: #0b5cff;
+  --sidebar-border: #e4e7eb;
+  --sidebar-ring: #0b5cff;
+
+  --surface: #ffffff;
+  --surface-hover: #f7f9fa;
+  --foreground-muted: #747474;
+
+  --info: #0b5cff;
+  --success: #00bfa5;
+  --warning: #ffaa00;
+  --error: #E01E5A;
+}
+
+@theme inline {
+  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  .glass {
+    backdrop-filter: blur(4px);
+    border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  }
+
+  .surface {
+    background-color: var(--surface);
+  }
+
+  .surface-hover {
+    &:hover {
+      background-color: var(--surface-hover);
+    }
+  }
+}
+
+/* Enhanced Light Mode Hover States */
+.light {
+
+  /* Better hover text visibility */
+  .hover\:text-foreground:hover {
+    color: var(--foreground) !important;
+  }
+
+  /* Active state improvements */
+  button:active:not(:disabled),
+  .active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+
+  /* Better contrast for hover states */
+  .hover\:bg-surface-hover:hover {
+    background-color: var(--surface-hover) !important;
+    color: var(--foreground) !important;
+  }
+
+  /* Enhanced button hover states with better visibility */
+  button:hover:not(:disabled) {
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  button:active:not(:disabled) {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Better focus states */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+  }
+
+  /* Improved link hover */
+  a:hover {
+    color: var(--primary);
+    transition: color 0.2s ease;
+  }
+
+  /* Better card hover effects */
+  .hover\:shadow-lg:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
+  }
+
+  /* Enhanced input focus */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+  }
+
+  /* Better sidebar active states */
+  [data-active="true"],
+  .bg-primary {
+    background-color: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+  }
+
+  /* Improved dropdown hover */
+  [role="menuitem"]:hover,
+  [role="option"]:hover {
+    background-color: var(--surface-hover) !important;
+    color: var(--foreground) !important;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Login Page Animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+
+  33% {
+    transform: translateY(-20px) translateX(10px);
+  }
+
+  66% {
+    transform: translateY(10px) translateX(-10px);
+  }
+}
+
+@keyframes float-slow {
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(0px);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) translateY(-15px);
+  }
+}
+
+@keyframes pulse-connection {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes shimmer-line {
+  0% {
+    background-position: -100% 0;
+  }
+
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+@keyframes shimmer-border {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes data-flow {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(calc(var(--target-x) - var(--start-x)), calc(var(--target-y) - var(--start-y)));
+    opacity: 0;
+  }
+}
+
+@keyframes transfer {
+  0% {
+    transform: translateX(0) translateY(-50%);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(calc(100% - 20px)) translateY(-50%);
+    opacity: 0;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gradient {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+.animate-pulse-connection {
+  animation: pulse-connection 2s ease-in-out infinite;
+}
+
+.animate-shimmer-line {
+  background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.5), transparent);
+  background-size: 200% 100%;
+  animation: shimmer-line 2s infinite;
+}
+
+.animate-shimmer-border {
+  animation: shimmer-border 3s infinite;
+}
+
+.animate-data-flow {
+  animation: data-flow 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+
+
+
+@keyframes heart-pulse {
+  0% {
+    stroke-dashoffset: 600;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-heart-pulse {
+  stroke-dasharray: 40 560;
+  animation: heart-pulse 3s linear infinite;
+}
+
+
+
+
+/* Radar scan animation for CDC watching indicator */
+@keyframes radar-scan {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.8;
+  }
+}
+
+/* Custom Scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
