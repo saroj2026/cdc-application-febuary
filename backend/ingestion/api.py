@@ -156,6 +156,7 @@ except ImportError:
 from ingestion.models import Connection, Pipeline, PipelineStatus, FullLoadStatus, CDCStatus, PipelineMode
 
 from ingestion.database import get_db
+from ingestion.auth.middleware import get_optional_user
 
 from ingestion.database.models_db import (
     ConnectionModel,
@@ -11853,21 +11854,19 @@ class InvitationAcceptRequest(BaseModel):
 async def import_users(
     request: Request,
     db: Session = Depends(get_db),
+    current_user: Optional[UserModel] = Depends(get_optional_user),
 ):
     """Import users from CSV (email, full_name, role). Creates users with status PENDING and sends invite."""
     try:
-        from ingestion.auth.middleware import get_optional_user
         from ingestion.auth.permissions import require_admin
-        current_user = get_optional_user(db=db)
-        if current_user:
-            require_admin(current_user=current_user)
-        else:
+        if not current_user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+        require_admin(current_user=current_user)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
-    content_type = request.headers.get("content-type", "")
-    if "multipart/form-data" not in content_type and "text/csv" not in content_type:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Send CSV file as multipart/form-data or text/csv")
+    content_type = (request.headers.get("content-type") or "").lower()
     body = b""
     try:
         if "multipart/form-data" in content_type:
@@ -11876,8 +11875,18 @@ async def import_users(
             if not file or not hasattr(file, "read"):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing file in form (key: file or csv)")
             body = (await file.read()) if hasattr(file, "read") else b""
-        else:
+        elif "text/csv" in content_type:
             body = await request.body()
+        else:
+            # Some clients (e.g. axios with FormData) may not send Content-Type; try parsing as form
+            form = await request.form()
+            file = form.get("file") or form.get("csv")
+            if file and hasattr(file, "read"):
+                body = (await file.read()) if hasattr(file, "read") else b""
+            if not body:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Send CSV file as multipart/form-data or text/csv")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to read file: {e}")
     if not body:
@@ -11933,7 +11942,13 @@ async def import_users(
             )
             db.add(inv)
             imported += 1
-            invitation_tokens.append({"email": email, "token": token, "expires_at": expires_at.isoformat()})
+            invitation_tokens.append({
+                "email": email,
+                "full_name": full_name,
+                "role": role,
+                "token": token,
+                "expires_at": expires_at.isoformat(),
+            })
         db.commit()
     except Exception as e:
         db.rollback()
