@@ -1909,8 +1909,9 @@ class ConnectionService:
             if hasattr(connection, 'schema') and connection.schema:
                 config["prefix"] = connection.schema  # Use schema field for S3 prefix
             if hasattr(connection, 'additional_config') and connection.additional_config:
-                # Allow additional_config for region_name, endpoint_url, etc.
                 config.update(connection.additional_config)
+            # boto3 expects region_name; support both region_name and region from frontend
+            config["region_name"] = config.get("region_name") or config.get("region") or "us-east-1"
             return S3Connector(config)
         elif db_type == "oracle":
             # Oracle connector expects host, port, database (SID) or service_name, user, password
@@ -2071,8 +2072,9 @@ class ConnectionService:
             if hasattr(connection, 'schema') and connection.schema:
                 config["prefix"] = connection.schema  # Use schema field for S3 prefix
             if hasattr(connection, 'additional_config') and connection.additional_config:
-                # Allow additional_config for region_name, endpoint_url, etc.
                 config.update(connection.additional_config)
+            # boto3 expects region_name; support both region_name and region from frontend
+            config["region_name"] = config.get("region_name") or config.get("region") or "us-east-1"
             return S3Connector(config)
         elif db_type in ["as400", "ibm_i", "db2"]:
             # AS400 connector expects 'server' instead of 'host'

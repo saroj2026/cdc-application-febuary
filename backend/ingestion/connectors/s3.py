@@ -123,12 +123,20 @@ class S3Connector(BaseConnector):
             return client
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code', '')
+            error_message = e.response.get('Error', {}).get('Message', '')
+            # Log actual AWS error for debugging (no credentials)
+            logger.error(
+                "S3 connection failed: bucket=%s code=%s message=%s",
+                bucket, error_code, error_message
+            )
             if error_code == '404':
                 raise ValueError(f"S3 bucket '{bucket}' not found")
             elif error_code == '403':
-                raise ValueError(f"Access denied to S3 bucket '{bucket}'. Check credentials and permissions.")
+                raise ValueError(
+                    f"Access denied to S3 bucket '{bucket}'. Check credentials and permissions. "
+                    f"AWS code: {error_code}; message: {error_message}"
+                )
             else:
-                logger.error(f"Failed to connect to S3: {e}")
                 raise
         except Exception as e:
             logger.error(f"Failed to connect to S3: {e}")

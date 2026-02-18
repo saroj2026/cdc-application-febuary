@@ -232,10 +232,9 @@ export function ConnectionModal({ isOpen, onClose, onSave, editingConnection }: 
         }
       }
 
-      // If editing, use the connection ID endpoint, otherwise use test endpoint
-      const endpoint = editingConnection 
-        ? `/api/v1/connections/${editingConnection.id}/test`
-        : `/api/v1/connections/test`
+      // Always use the payload-based test endpoint so current form credentials are tested.
+      // When editing, the by-ID endpoint would ignore the body and test saved (old) credentials.
+      const endpoint = `/api/v1/connections/test`
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${endpoint}`, {
         method: 'POST',
