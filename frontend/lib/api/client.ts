@@ -23,6 +23,10 @@ class ApiClient {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      // Let browser set Content-Type (with boundary) when sending FormData; avoid default application/json
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+      }
       return config;
     });
 
@@ -216,12 +220,12 @@ class ApiClient {
     await this.client.delete(`/api/v1/users/${String(userId)}`);
   }
 
-  async importUsers(file: File): Promise<{ imported: number; skipped_duplicates: number; errors: string[]; invitation_tokens: Array<{ email: string; token: string; expires_at: string }> }> {
+  async importUsers(file: File): Promise<{ imported: number; skipped_duplicates: number; errors: string[]; invitation_tokens: Array<{ email: string; full_name?: string; role?: string; token: string; expires_at: string }> }> {
     const form = new FormData();
     form.append('file', file);
-    const response = await this.client.post('/api/v1/users/import', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    // Content-Type is cleared by request interceptor for FormData so browser sets multipart/form-data with boundary
+    // Use longer timeout: import does many DB inserts and can take 30–60s for large CSVs
+    const response = await this.client.post('/api/v1/users/import', form, { timeout: 60000 });
     return response.data;
   }
 

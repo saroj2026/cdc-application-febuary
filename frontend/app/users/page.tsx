@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -29,7 +29,9 @@ import {
   LayoutGrid,
   List,
   Mail,
-  Upload
+  Upload,
+  Copy,
+  Check
 } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { UserModal } from "@/components/users/user-modal"
@@ -41,6 +43,7 @@ import { formatDistanceToNow } from "date-fns"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { hasPermission } from "@/lib/store/slices/permissionSlice"
 import { AuditLogViewer } from "@/components/users/audit-log-viewer"
 import { store } from "@/lib/store/store"
@@ -82,6 +85,48 @@ const ROLE_ICONS: Record<string, any> = {
   viewer: Eye,
 }
 
+function ImportResultRow({ index, row }: { index: number; row: { email: string; full_name?: string; role?: string; token: string; expires_at: string } }) {
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [copiedEmail, setCopiedEmail] = useState(false)
+  const inviteLink = typeof window !== "undefined" ? `${window.location.origin}/auth/accept-invite?token=${row.token}` : ""
+  const copyLink = () => {
+    if (inviteLink && typeof navigator !== "undefined") {
+      navigator.clipboard.writeText(inviteLink)
+      setCopiedLink(true)
+      setTimeout(() => setCopiedLink(false), 2000)
+    }
+  }
+  const copyEmail = () => {
+    if (row.email && typeof navigator !== "undefined") {
+      navigator.clipboard.writeText(row.email)
+      setCopiedEmail(true)
+      setTimeout(() => setCopiedEmail(false), 2000)
+    }
+  }
+  const expiresDate = row.expires_at ? new Date(row.expires_at).toLocaleDateString(undefined, { dateStyle: "short" }) : "—"
+  return (
+    <TableRow>
+      <TableCell className="text-muted-foreground w-12">{index}</TableCell>
+      <TableCell className="font-medium whitespace-nowrap">{row.email}</TableCell>
+      <TableCell className="whitespace-nowrap">{row.full_name || "—"}</TableCell>
+      <TableCell className="whitespace-nowrap">{row.role ? row.role.charAt(0).toUpperCase() + row.role.slice(1) : "—"}</TableCell>
+      <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{expiresDate}</TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <Button variant="outline" size="sm" className="h-8 gap-1 text-xs" onClick={copyLink} title="Copy invite link">
+            {copiedLink ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+            {copiedLink ? "Copied" : "Copy link"}
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={copyEmail} title="Copy email">
+            {copiedEmail ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+            {copiedEmail ? "Copied" : "Email"}
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+}
+
 export default function UsersPage() {
   const dispatch = useAppDispatch()
   const { user: currentUser } = useAppSelector((state) => state.auth)
@@ -101,11 +146,11 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const [activeTab, setActiveTab] = useState<"users" | "audit">("users")
+  const [activeTab, setActiveTab] = useState<"users" | "import" | "audit">("users")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [inviteModalOpen, setInviteModalOpen] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
-  const [importResult, setImportResult] = useState<{ imported: number; skipped_duplicates: number; errors: string[]; invitation_tokens: Array<{ email: string; token: string; expires_at: string }> } | null>(null)
+  const [importResult, setImportResult] = useState<{ imported: number; skipped_duplicates: number; errors: string[]; invitation_tokens: Array<{ email: string; full_name?: string; role?: string; token: string; expires_at: string }> } | null>(null)
   const [importLoading, setImportLoading] = useState(false)
   const { showConfirm, ConfirmDialogComponent } = useConfirmDialog()
   const usersPerPage = 8
@@ -299,68 +344,14 @@ export default function UsersPage() {
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "users" | "audit")}>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "users" | "import" | "audit")}>
           <TabsList>
             <TabsTrigger value="users">Users</TabsTrigger>
+            {canCreateUser && <TabsTrigger value="import">Import CSV</TabsTrigger>}
             {canViewAuditLogs && <TabsTrigger value="audit">Audit Logs</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
-            {/* Import Users (CSV) */}
-            {canCreateUser && (
-              <Card>
-                <CardContent className="pt-6">
-                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <Upload className="w-4 h-4" />
-                    Import users from CSV
-                  </h4>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    CSV format: email, full_name, role (e.g. john@company.com, John Doe, Admin)
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Input
-                      type="file"
-                      accept=".csv"
-                      className="max-w-xs"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0]
-                        setImportFile(f || null)
-                        setImportResult(null)
-                      }}
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={!importFile || importLoading}
-                      onClick={handleImportCsv}
-                    >
-                      {importLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Importing...
-                        </>
-                      ) : (
-                        "Upload & import"
-                      )}
-                    </Button>
-                  </div>
-                  {importResult && (
-                    <div className="mt-3 p-3 rounded-md bg-muted/50 text-sm">
-                      <p>Imported: {importResult.imported} · Skipped (duplicates): {importResult.skipped_duplicates}</p>
-                      {importResult.errors.length > 0 && (
-                        <p className="text-destructive mt-1">Errors: {importResult.errors.join("; ")}</p>
-                      )}
-                      {importResult.invitation_tokens.length > 0 && (
-                        <p className="text-muted-foreground mt-1">
-                          Invitation tokens created for {importResult.invitation_tokens.length} user(s). Share accept-invite links with token.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
             {/* Filters */}
             <Card>
               <CardContent className="pt-6">
@@ -651,6 +642,99 @@ export default function UsersPage() {
               </>
             )}
           </TabsContent>
+
+          {canCreateUser && (
+            <TabsContent value="import" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="w-5 h-5" />
+                    Import users from CSV
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a CSV with columns: email, full_name, role. Users are created as PENDING and invitation links are generated.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Input
+                      type="file"
+                      accept=".csv"
+                      className="max-w-xs"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        setImportFile(f || null)
+                        setImportResult(null)
+                      }}
+                    />
+                    <Button
+                      disabled={!importFile || importLoading}
+                      onClick={handleImportCsv}
+                    >
+                      {importLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload & import
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {importResult && (
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-4 p-3 rounded-lg bg-muted/50 text-sm">
+                        <span>Imported: <strong>{importResult.imported}</strong></span>
+                        <span>Skipped (duplicates): <strong>{importResult.skipped_duplicates}</strong></span>
+                        {importResult.errors.length > 0 && (
+                          <span className="text-destructive">Errors: {importResult.errors.length}</span>
+                        )}
+                      </div>
+                      {importResult.errors.length > 0 && (
+                        <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5">
+                          <p className="text-sm font-medium text-destructive mb-2">Row errors</p>
+                          <ul className="text-xs text-destructive list-disc list-inside">
+                            {importResult.errors.map((err, i) => (
+                              <li key={i}>{err}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {importResult.invitation_tokens.length > 0 && (
+                        <div className="rounded-md border">
+                          <p className="p-3 border-b text-sm font-medium bg-muted/30">
+                            Imported users ({importResult.invitation_tokens.length}) — share invite links via Actions
+                          </p>
+                          <div className="max-h-[480px] overflow-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="whitespace-nowrap">#</TableHead>
+                                  <TableHead className="whitespace-nowrap">Email</TableHead>
+                                  <TableHead className="whitespace-nowrap">Full name</TableHead>
+                                  <TableHead className="whitespace-nowrap">Role</TableHead>
+                                  <TableHead className="whitespace-nowrap">Expires</TableHead>
+                                  <TableHead className="whitespace-nowrap text-right w-[180px]">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {importResult.invitation_tokens.map((row, idx) => (
+                                  <ImportResultRow key={idx} index={idx + 1} row={row} />
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {canViewAuditLogs && (
             <TabsContent value="audit">
