@@ -718,316 +718,378 @@ export default function PipelinesPage() {
           {pipelines.length > 0 && (
             <>
               {view === "grid" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {paginatedPipelines.map((pipeline) => (
-                    <Card
-                      key={pipeline.id}
-                      className={`p-0 bg-card border-l-4 shadow-sm hover:shadow-md transition-all group relative overflow-hidden h-full flex flex-col ${pipeline.status === "active" || pipeline.status === "running" ? "border-l-success" :
-                        pipeline.status === "paused" ? "border-l-warning" :
-                          pipeline.status === "failed" || pipeline.status === "error" ? "border-l-error" :
-                            "border-l-muted"
-                        }`}
-                      onClick={() => setSelectedPipelineId(pipeline.id)}
-                    >
-                      {/* Deep Watermark Icon */}
-                      <div className="absolute -right-6 -bottom-6 transition-all duration-700 group-hover:scale-110 group-hover:-rotate-12 pointer-events-none">
-                        <Workflow className={cn(
-                          "w-36 h-36 opacity-[0.03] dark:opacity-[0.05] group-hover:opacity-[0.1] transition-opacity",
-                          pipeline.status === "active" || pipeline.status === "running" ? "text-success" :
-                            pipeline.status === "paused" ? "text-warning" :
-                              pipeline.status === "failed" || pipeline.status === "error" ? "text-error" : "text-slate-400"
-                        )} />
-                      </div>
-                      {/* Animated Green Bar for Running State */}
-                      {(pipeline.status === "active" || pipeline.status === "running") && (
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-success/50 overflow-hidden z-10">
-                          <div className="absolute inset-0 bg-white/50 w-full animate-[shimmer_2s_infinite] translate-x-[-100%]" />
-                        </div>
-                      )}
-
-                      {/* Header with Status */}
-                      <div className="p-4 border-b border-border/50 relative z-10">
-
-                        {/* Pipeline Icon - Top Right */}
-                        <div className="absolute top-4 right-4 z-10">
-                          <div className={`p-1.5 rounded-md transition-colors ${pipeline.status === "active" || pipeline.status === "running" ? "bg-success/10 text-success" :
-                            pipeline.status === "paused" ? "bg-warning/10 text-warning" :
-                              "bg-muted text-foreground-muted"
-                            }`}>
-                            <Workflow className="w-4 h-4" />
-                          </div>
-                        </div>
-
-                        <div className="flex items-start justify-between mb-2 pr-12 relative z-10">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1.5">
-                              {getStatusIcon(pipeline.status)}
-                              <h3 className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                                {pipeline.name}
-                              </h3>
-                            </div>
-                            {pipeline.description && (
-                              <p className="text-xs text-foreground-muted line-clamp-1 mb-2">{pipeline.description}</p>
-                            )}
-                            <div className="flex items-center gap-1.5 flex-nowrap">
-                              {(pipeline.status === "active" || pipeline.status === "running") && (
-                                <Badge className="bg-success/10 text-success border border-success/20 text-[10px] px-1.5 py-0 h-5 whitespace-nowrap flex-shrink-0 shadow-none">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-success mr-1.5 animate-pulse shadow-[0_0_4px_rgba(34,197,94,0.6)]"></div>
-                                  Running
-                                </Badge>
-                              )}
-                              <Badge
-                                className={
-                                  `text-[10px] px-1.5 py-0 h-5 whitespace-nowrap flex-shrink-0 shadow-none ${pipeline.full_load_type === "overwrite" && pipeline.cdc_enabled
-                                    ? "bg-primary/10 text-primary border border-primary/20"
-                                    : pipeline.cdc_enabled
-                                      ? "bg-info/10 text-info border border-info/20"
-                                      : "bg-warning/10 text-warning border border-warning/20"
-                                  }`
-                                }
-                              >
-                                {pipeline.full_load_type === "overwrite" && pipeline.cdc_enabled
-                                  ? "Full + CDC"
-                                  : pipeline.cdc_enabled
-                                    ? "CDC"
-                                    : "Full"}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Connection Flow */}
-                        <div className="flex items-center gap-1.5 text-[11px] text-foreground-muted mt-3 bg-muted/30 p-2 rounded border border-border/50 relative z-10">
-                          <div className="flex items-center gap-1 flex-1 min-w-0">
-                            <Database className="w-3 h-3 text-primary/70 shrink-0" />
-                            <span className="truncate font-medium">{getSourceConnectionName(pipeline.source_connection_id)}</span>
-                          </div>
-                          <ArrowRight className="w-3 h-3 text-foreground-muted/50 shrink-0" />
-                          <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
-                            <span className="truncate font-medium text-right">{getTargetConnectionName(pipeline.target_connection_id)}</span>
-                            <Database className="w-3 h-3 text-info/70 shrink-0" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Stats Grid */}
-                      <div className="p-4 grid grid-cols-2 gap-3 bg-muted/10 relative z-10">
-                        {(() => {
-                          const stats = getPipelineReplicationStats(pipeline.id)
-                          return (
-                            <>
-                              <div className="flex items-center gap-2">
-                                <GitBranch className="w-3.5 h-3.5 text-foreground-muted" />
-                                <div>
-                                  <p className="text-[10px] text-foreground-muted uppercase tracking-wider">Tables</p>
-                                  <p className="text-xs font-semibold text-foreground">{pipeline.table_mappings?.length || 0}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Activity className="w-3.5 h-3.5 text-foreground-muted" />
-                                <div>
-                                  <p className="text-[10px] text-foreground-muted uppercase tracking-wider">Events</p>
-                                  <p className="text-xs font-semibold text-foreground">{stats.totalEvents.toLocaleString()}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Clock className="w-3.5 h-3.5 text-foreground-muted" />
-                                <div>
-                                  <p className="text-[10px] text-foreground-muted uppercase tracking-wider">Success</p>
-                                  <p className="text-xs font-semibold text-foreground">{stats.successEvents.toLocaleString()}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Database className="w-3.5 h-3.5 text-foreground-muted" />
-                                <div>
-                                  <p className="text-[10px] text-foreground-muted uppercase tracking-wider">Rate</p>
-                                  <p className="text-xs font-semibold text-foreground">{stats.successRate}%</p>
-                                </div>
-                              </div>
-                            </>
-                          )
-                        })()}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="p-2 py-2 flex items-center justify-between gap-2 border-t border-border bg-card relative z-10 mt-auto">
-                        <div className="flex gap-1">
-                          {pipeline.status === "active" || pipeline.status === "running" ? (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0 text-foreground-muted hover:text-foreground hover:bg-muted"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handlePausePipeline(pipeline.id)
-                                }}
-                                disabled={isLoading}
-                                title="Pause"
-                              >
-                                <Pause className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0 text-foreground-muted hover:text-error hover:bg-error/10"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleStopPipeline(pipeline.id)
-                                }}
-                                disabled={isLoading}
-                                title="Stop"
-                              >
-                                <Square className="w-3.5 h-3.5" />
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 text-foreground-muted hover:text-primary hover:bg-primary/10"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleTriggerPipeline(pipeline.id, "full_load")
-                              }}
-                              disabled={isLoading}
-                              title="Run"
-                            >
-                              <Play className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-foreground-muted hover:text-foreground hover:bg-muted"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleOpenEdit(pipeline)
-                            }}
-                            title="Edit"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-foreground-muted hover:text-foreground hover:bg-muted"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedPipelineId(pipeline.id)
-                            }}
-                            title="Details"
-                          >
-                            <Settings className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 text-foreground-muted hover:text-error hover:bg-error/10"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeletePipeline(pipeline.id)
-                            }}
-                            disabled={isLoading}
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {paginatedPipelines.map((pipeline) => {
+                    const isActive = pipeline.status === "active" || pipeline.status === "running"
+                    const isPaused = pipeline.status === "paused"
+                    const isError = pipeline.status === "failed" || pipeline.status === "error"
                     const stats = getPipelineReplicationStats(pipeline.id)
+
+                    // Status-based color configs
+                    const statusColors = isActive
+                      ? { accent: "from-emerald-400 to-cyan-500", accentDark: "dark:from-emerald-500 dark:to-cyan-600", glow: "hover:shadow-[0_8px_30px_rgba(0,210,182,0.18)]", glowDark: "dark:hover:shadow-[0_8px_30px_rgba(0,210,182,0.25)]", bg: "bg-gradient-to-br from-emerald-50/80 via-cyan-50/60 to-sky-50/80", bgDark: "dark:from-[#0f2620] dark:via-[#0e2229] dark:to-[#0f1f2d]", dot: "bg-emerald-500", ring: "ring-emerald-500/20 dark:ring-emerald-400/30", iconBg: "bg-emerald-100 dark:bg-emerald-500/15", iconText: "text-emerald-600 dark:text-emerald-400", statBg: "bg-emerald-50/60 dark:bg-emerald-500/[0.06]", borderAccent: "border-emerald-200/60 dark:border-emerald-500/15" }
+                      : isPaused
+                        ? { accent: "from-amber-400 to-orange-500", accentDark: "dark:from-amber-500 dark:to-orange-600", glow: "hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]", glowDark: "dark:hover:shadow-[0_8px_30px_rgba(245,158,11,0.2)]", bg: "bg-gradient-to-br from-amber-50/80 via-orange-50/60 to-yellow-50/80", bgDark: "dark:from-[#201a0e] dark:via-[#221c10] dark:to-[#1e1a0f]", dot: "bg-amber-500", ring: "ring-amber-500/20 dark:ring-amber-400/30", iconBg: "bg-amber-100 dark:bg-amber-500/15", iconText: "text-amber-600 dark:text-amber-400", statBg: "bg-amber-50/60 dark:bg-amber-500/[0.06]", borderAccent: "border-amber-200/60 dark:border-amber-500/15" }
+                        : isError
+                          ? { accent: "from-rose-400 to-pink-500", accentDark: "dark:from-rose-500 dark:to-pink-600", glow: "hover:shadow-[0_8px_30px_rgba(244,63,94,0.15)]", glowDark: "dark:hover:shadow-[0_8px_30px_rgba(244,63,94,0.2)]", bg: "bg-gradient-to-br from-rose-50/80 via-pink-50/60 to-fuchsia-50/80", bgDark: "dark:from-[#200e14] dark:via-[#220e18] dark:to-[#1e0f1a]", dot: "bg-rose-500", ring: "ring-rose-500/20 dark:ring-rose-400/30", iconBg: "bg-rose-100 dark:bg-rose-500/15", iconText: "text-rose-600 dark:text-rose-400", statBg: "bg-rose-50/60 dark:bg-rose-500/[0.06]", borderAccent: "border-rose-200/60 dark:border-rose-500/15" }
+                          : { accent: "from-blue-400 to-indigo-500", accentDark: "dark:from-blue-500 dark:to-indigo-600", glow: "hover:shadow-[0_8px_30px_rgba(59,130,246,0.12)]", glowDark: "dark:hover:shadow-[0_8px_30px_rgba(59,130,246,0.18)]", bg: "bg-gradient-to-br from-blue-50/80 via-indigo-50/60 to-violet-50/80", bgDark: "dark:from-[#0e1420] dark:via-[#101524] dark:to-[#0f1322]", dot: "bg-slate-400 dark:bg-slate-500", ring: "ring-blue-500/10 dark:ring-blue-400/20", iconBg: "bg-blue-100 dark:bg-blue-500/15", iconText: "text-blue-600 dark:text-blue-400", statBg: "bg-blue-50/60 dark:bg-blue-500/[0.06]", borderAccent: "border-blue-200/60 dark:border-blue-500/15" }
+
                     return (
                       <div
                         key={pipeline.id}
-                        className={`flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:shadow-md transition-all cursor-pointer group border-l-4 ${pipeline.status === "active" || pipeline.status === "running" ? "border-l-success" :
-                          pipeline.status === "paused" ? "border-l-warning" :
-                            pipeline.status === "failed" || pipeline.status === "error" ? "border-l-error" :
-                              "border-l-muted"
-                          }`}
+                        className={cn(
+                          "relative group cursor-pointer rounded-xl overflow-hidden h-full flex flex-col",
+                          "border border-black/[0.07] dark:border-white/[0.08]",
+                          "shadow-sm transition-all duration-500 ease-out",
+                          statusColors.glow, statusColors.glowDark,
+                          "hover:-translate-y-0.5",
+                          // Light mode bg
+                          statusColors.bg,
+                          // Dark mode bg
+                          "dark:bg-gradient-to-br", statusColors.bgDark,
+                        )}
                         onClick={() => setSelectedPipelineId(pipeline.id)}
                       >
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {/* Top Accent Gradient Bar */}
+                        <div className={cn(
+                          "h-1 w-full bg-gradient-to-r",
+                          statusColors.accent, statusColors.accentDark,
+                          "relative overflow-hidden"
+                        )}>
+                          {isActive && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-[shimmer_2s_infinite] translate-x-[-100%]" />
+                          )}
+                        </div>
+
+                        {/* Decorative Background Orb */}
+                        <div className={cn(
+                          "absolute -right-10 -top-10 w-32 h-32 rounded-full blur-3xl opacity-[0.08] group-hover:opacity-[0.15] transition-opacity duration-700 pointer-events-none",
+                          isActive ? "bg-emerald-500" : isPaused ? "bg-amber-500" : isError ? "bg-rose-500" : "bg-blue-500"
+                        )} />
+
+                        {/* Watermark Icon */}
+                        <div className="absolute -right-4 -bottom-4 transition-all duration-700 group-hover:scale-110 group-hover:-rotate-12 pointer-events-none">
+                          <Workflow className={cn(
+                            "w-28 h-28 opacity-[0.03] dark:opacity-[0.06] group-hover:opacity-[0.08] transition-opacity duration-500",
+                            isActive ? "text-emerald-500" : isPaused ? "text-amber-500" : isError ? "text-rose-500" : "text-blue-500"
+                          )} />
+                        </div>
+
+                        {/* === Card Body === */}
+                        <div className="flex flex-col flex-1 relative z-10">
+
+                          {/* Header Section */}
+                          <div className="p-4 pb-3">
+                            {/* Top Row: Status + Icon Badge */}
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-2">
+                                {/* Status Orb */}
+                                <div className={cn("relative flex-shrink-0")}>
+                                  <div className={cn(
+                                    "w-2.5 h-2.5 rounded-full",
+                                    statusColors.dot,
+                                    isActive && "animate-pulse"
+                                  )} />
+                                  {isActive && (
+                                    <div className={cn(
+                                      "absolute -inset-1 rounded-full animate-ping opacity-30",
+                                      statusColors.dot
+                                    )} />
+                                  )}
+                                </div>
+                                <h3 className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors duration-300">
+                                  {pipeline.name}
+                                </h3>
+                              </div>
+                              {/* Pipeline Type Icon */}
+                              <div className={cn(
+                                "p-1.5 rounded-lg transition-all duration-300 flex-shrink-0",
+                                statusColors.iconBg,
+                                "group-hover:scale-110 group-hover:rotate-3"
+                              )}>
+                                <Workflow className={cn("w-3.5 h-3.5", statusColors.iconText)} />
+                              </div>
+                            </div>
+
+                            {/* Description */}
+                            {pipeline.description && (
+                              <p className="text-[11px] text-foreground-muted/80 line-clamp-1 mb-2.5 pl-5">{pipeline.description}</p>
+                            )}
+
+                            {/* Badges */}
+                            <div className="flex items-center gap-1.5 flex-wrap pl-5">
+                              {isActive && (
+                                <span className={cn(
+                                  "inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                                  "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+                                  "ring-1 ring-emerald-500/20 dark:ring-emerald-400/20"
+                                )}>
+                                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                                  Live
+                                </span>
+                              )}
+                              {isPaused && (
+                                <span className={cn(
+                                  "inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                                  "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+                                  "ring-1 ring-amber-500/20 dark:ring-amber-400/20"
+                                )}>
+                                  <Pause className="w-2.5 h-2.5" />
+                                  Paused
+                                </span>
+                              )}
+                              {isError && (
+                                <span className={cn(
+                                  "inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                                  "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400",
+                                  "ring-1 ring-rose-500/20 dark:ring-rose-400/20"
+                                )}>
+                                  <AlertCircle className="w-2.5 h-2.5" />
+                                  Error
+                                </span>
+                              )}
+                              <span className={cn(
+                                "inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                                pipeline.full_load_type === "overwrite" && pipeline.cdc_enabled
+                                  ? "bg-blue-100 text-blue-700 ring-1 ring-blue-500/20 dark:bg-blue-500/15 dark:text-blue-400 dark:ring-blue-400/20"
+                                  : pipeline.cdc_enabled
+                                    ? "bg-sky-100 text-sky-700 ring-1 ring-sky-500/20 dark:bg-sky-500/15 dark:text-sky-400 dark:ring-sky-400/20"
+                                    : "bg-violet-100 text-violet-700 ring-1 ring-violet-500/20 dark:bg-violet-500/15 dark:text-violet-400 dark:ring-violet-400/20"
+                              )}>
+                                {pipeline.full_load_type === "overwrite" && pipeline.cdc_enabled
+                                  ? "Full + CDC"
+                                  : pipeline.cdc_enabled ? "CDC" : "Full Load"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Connection Flow Strip */}
+                          <div className={cn(
+                            "mx-4 mb-3 flex items-center gap-2 p-2.5 rounded-lg",
+                            "bg-white/50 dark:bg-white/[0.03]",
+                            "border", statusColors.borderAccent,
+                            "backdrop-blur-sm"
+                          )}>
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                              <div className="p-1 rounded bg-primary/10 dark:bg-primary/20">
+                                <Database className="w-3 h-3 text-primary" />
+                              </div>
+                              <span className="text-[11px] font-medium text-foreground truncate">{getSourceConnectionName(pipeline.source_connection_id)}</span>
+                            </div>
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <div className="w-4 h-[1.5px] bg-foreground-muted/30 rounded-full" />
+                              <ArrowRight className={cn("w-3.5 h-3.5", statusColors.iconText)} />
+                              <div className="w-4 h-[1.5px] bg-foreground-muted/30 rounded-full" />
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                              <span className="text-[11px] font-medium text-foreground truncate text-right">{getTargetConnectionName(pipeline.target_connection_id)}</span>
+                              <div className="p-1 rounded bg-info/10 dark:bg-info/20">
+                                <Database className="w-3 h-3 text-info" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Stats Grid */}
+                          <div className="mx-4 mb-3 grid grid-cols-4 gap-1.5">
+                            {[
+                              { icon: GitBranch, label: "Tables", value: pipeline.table_mappings?.length || 0 },
+                              { icon: Activity, label: "Events", value: stats.totalEvents.toLocaleString() },
+                              { icon: Clock, label: "Success", value: stats.successEvents.toLocaleString() },
+                              { icon: Database, label: "Rate", value: `${stats.successRate}%` }
+                            ].map(({ icon: Icon, label, value }) => (
+                              <div key={label} className={cn(
+                                "flex flex-col items-center justify-center py-2 px-1 rounded-lg",
+                                statusColors.statBg,
+                                "border", statusColors.borderAccent
+                              )}>
+                                <Icon className={cn("w-3 h-3 mb-1", statusColors.iconText, "opacity-70")} />
+                                <span className="text-[9px] text-foreground-muted/70 uppercase tracking-widest font-medium">{label}</span>
+                                <span className="text-xs font-bold text-foreground mt-0.5">{value}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Actions Bar */}
+                          <div className={cn(
+                            "px-3 py-2 flex items-center justify-between mt-auto",
+                            "border-t", statusColors.borderAccent,
+                            "bg-white/40 dark:bg-black/15 backdrop-blur-sm"
+                          )}>
+                            <div className="flex gap-0.5">
+                              {isActive ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn("h-7 w-7 p-0 rounded-lg text-foreground-muted hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-100/80 dark:hover:bg-amber-500/15 transition-colors")}
+                                    onClick={(e) => { e.stopPropagation(); handlePausePipeline(pipeline.id) }}
+                                    disabled={isLoading}
+                                    title="Pause"
+                                  >
+                                    <Pause className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0 rounded-lg text-foreground-muted hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-100/80 dark:hover:bg-rose-500/15 transition-colors"
+                                    onClick={(e) => { e.stopPropagation(); handleStopPipeline(pipeline.id) }}
+                                    disabled={isLoading}
+                                    title="Stop"
+                                  >
+                                    <Square className="w-3.5 h-3.5" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 rounded-lg text-foreground-muted hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-100/80 dark:hover:bg-emerald-500/15 transition-colors"
+                                  onClick={(e) => { e.stopPropagation(); handleTriggerPipeline(pipeline.id, "full_load") }}
+                                  disabled={isLoading}
+                                  title="Run"
+                                >
+                                  <Play className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                            <div className="flex gap-0.5">
+                              <Button
+                                variant="ghost" size="sm"
+                                className="h-7 w-7 p-0 rounded-lg text-foreground-muted hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); handleOpenEdit(pipeline) }}
+                                title="Edit"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost" size="sm"
+                                className="h-7 w-7 p-0 rounded-lg text-foreground-muted hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setSelectedPipelineId(pipeline.id) }}
+                                title="Details"
+                              >
+                                <Settings className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost" size="sm"
+                                className="h-7 w-7 p-0 rounded-lg text-foreground-muted hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-100/80 dark:hover:bg-rose-500/15 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); handleDeletePipeline(pipeline.id) }}
+                                disabled={isLoading}
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {paginatedPipelines.map((pipeline) => {
+                    const isActive = pipeline.status === "active" || pipeline.status === "running"
+                    const isPaused = pipeline.status === "paused"
+                    const isError = pipeline.status === "failed" || pipeline.status === "error"
+                    const stats = getPipelineReplicationStats(pipeline.id)
+
+                    const listColors = isActive
+                      ? { bg: "from-emerald-50/70 via-cyan-50/50 to-sky-50/70", bgDark: "dark:from-[#0f2620] dark:via-[#0e2229] dark:to-[#0f1f2d]", accent: "from-emerald-400 to-cyan-500", accentDark: "dark:from-emerald-500 dark:to-cyan-600", dot: "bg-emerald-500", glow: "hover:shadow-[0_4px_24px_rgba(0,210,182,0.14)]", glowDark: "dark:hover:shadow-[0_4px_24px_rgba(0,210,182,0.22)]", badge: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-400", iconText: "text-emerald-600 dark:text-emerald-400" }
+                      : isPaused
+                        ? { bg: "from-amber-50/70 via-orange-50/50 to-yellow-50/70", bgDark: "dark:from-[#201a0e] dark:via-[#221c10] dark:to-[#1e1a0f]", accent: "from-amber-400 to-orange-500", accentDark: "dark:from-amber-500 dark:to-orange-600", dot: "bg-amber-500", glow: "hover:shadow-[0_4px_24px_rgba(245,158,11,0.12)]", glowDark: "dark:hover:shadow-[0_4px_24px_rgba(245,158,11,0.18)]", badge: "bg-amber-100 text-amber-700 ring-1 ring-amber-500/20 dark:bg-amber-500/15 dark:text-amber-400", iconText: "text-amber-600 dark:text-amber-400" }
+                        : isError
+                          ? { bg: "from-rose-50/70 via-pink-50/50 to-fuchsia-50/70", bgDark: "dark:from-[#200e14] dark:via-[#220e18] dark:to-[#1e0f1a]", accent: "from-rose-400 to-pink-500", accentDark: "dark:from-rose-500 dark:to-pink-600", dot: "bg-rose-500", glow: "hover:shadow-[0_4px_24px_rgba(244,63,94,0.12)]", glowDark: "dark:hover:shadow-[0_4px_24px_rgba(244,63,94,0.18)]", badge: "bg-rose-100 text-rose-700 ring-1 ring-rose-500/20 dark:bg-rose-500/15 dark:text-rose-400", iconText: "text-rose-600 dark:text-rose-400" }
+                          : { bg: "from-blue-50/70 via-indigo-50/50 to-violet-50/70", bgDark: "dark:from-[#0e1420] dark:via-[#101524] dark:to-[#0f1322]", accent: "from-blue-400 to-indigo-500", accentDark: "dark:from-blue-500 dark:to-indigo-600", dot: "bg-slate-400 dark:bg-slate-500", glow: "hover:shadow-[0_4px_24px_rgba(59,130,246,0.1)]", glowDark: "dark:hover:shadow-[0_4px_24px_rgba(59,130,246,0.15)]", badge: "bg-blue-100 text-blue-700 ring-1 ring-blue-500/20 dark:bg-blue-500/15 dark:text-blue-400", iconText: "text-blue-600 dark:text-blue-400" }
+
+                    return (
+                      <div
+                        key={pipeline.id}
+                        className={cn(
+                          "relative flex items-center justify-between p-3 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer group",
+                          "border border-black/[0.07] dark:border-white/[0.08]",
+                          "bg-gradient-to-r", listColors.bg,
+                          "dark:bg-gradient-to-r", listColors.bgDark,
+                          listColors.glow, listColors.glowDark,
+                          "hover:-translate-y-px"
+                        )}
+                        onClick={() => setSelectedPipelineId(pipeline.id)}
+                      >
+                        {/* Left Accent Bar */}
+                        <div className={cn(
+                          "absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b",
+                          listColors.accent, listColors.accentDark
+                        )} />
+
+                        <div className="flex items-center gap-4 flex-1 min-w-0 pl-2">
                           <div className="flex items-center gap-3 min-w-[200px]">
-                            {getStatusIcon(pipeline.status)}
+                            {/* Status Dot */}
+                            <div className="relative flex-shrink-0">
+                              <div className={cn("w-2.5 h-2.5 rounded-full", listColors.dot, isActive && "animate-pulse")} />
+                              {isActive && <div className={cn("absolute -inset-1 rounded-full animate-ping opacity-30", listColors.dot)} />}
+                            </div>
                             <div>
-                              <h3 className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{pipeline.name}</h3>
+                              <h3 className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">{pipeline.name}</h3>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] text-foreground-muted uppercase tracking-wider bg-muted px-1.5 rounded">
+                                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", listColors.badge)}>
                                   {pipeline.full_load_type === "overwrite" && pipeline.cdc_enabled ? "Full + CDC" : pipeline.cdc_enabled ? "CDC Only" : "Full Load"}
                                 </span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 text-xs text-foreground-muted px-4 border-l border-border/50 min-w-[250px]">
-                            <div className="flex items-center gap-1 max-w-[120px]">
-                              <Database className="w-3 h-3 opacity-50" />
+                          <div className="flex items-center gap-2 text-xs text-foreground-muted px-4 border-l border-black/[0.06] dark:border-white/[0.06] min-w-[250px]">
+                            <div className="flex items-center gap-1.5 max-w-[120px]">
+                              <div className="p-0.5 rounded bg-primary/10"><Database className="w-2.5 h-2.5 text-primary" /></div>
                               <span className="truncate font-medium">{getSourceConnectionName(pipeline.source_connection_id)}</span>
                             </div>
-                            <ArrowRight className="w-3 h-3 opacity-30" />
-                            <div className="flex items-center gap-1 max-w-[120px]">
-                              <Database className="w-3 h-3 opacity-50" />
+                            <div className="flex items-center gap-0.5">
+                              <div className="w-3 h-[1.5px] bg-foreground-muted/30 rounded-full" />
+                              <ArrowRight className={cn("w-3 h-3", listColors.iconText)} />
+                              <div className="w-3 h-[1.5px] bg-foreground-muted/30 rounded-full" />
+                            </div>
+                            <div className="flex items-center gap-1.5 max-w-[120px]">
                               <span className="truncate font-medium">{getTargetConnectionName(pipeline.target_connection_id)}</span>
+                              <div className="p-0.5 rounded bg-info/10"><Database className="w-2.5 h-2.5 text-info" /></div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-6 px-4 border-l border-border/50 hidden lg:flex">
+                          <div className="flex items-center gap-6 px-4 border-l border-black/[0.06] dark:border-white/[0.06] hidden lg:flex">
                             <div className="text-center">
-                              <p className="text-[10px] text-foreground-muted uppercase">Tables</p>
-                              <p className="text-xs font-medium">{pipeline.table_mappings?.length}</p>
+                              <p className="text-[10px] text-foreground-muted uppercase tracking-wider">Tables</p>
+                              <p className="text-xs font-bold text-foreground">{pipeline.table_mappings?.length}</p>
                             </div>
                             <div className="text-center">
-                              <p className="text-[10px] text-foreground-muted uppercase">Events</p>
-                              <p className="text-xs font-medium">{stats.totalEvents}</p>
+                              <p className="text-[10px] text-foreground-muted uppercase tracking-wider">Events</p>
+                              <p className="text-xs font-bold text-foreground">{stats.totalEvents}</p>
                             </div>
                             <div className="text-center">
-                              <p className="text-[10px] text-foreground-muted uppercase">Rate</p>
-                              <p className="text-xs font-medium">{stats.successRate}%</p>
+                              <p className="text-[10px] text-foreground-muted uppercase tracking-wider">Rate</p>
+                              <p className="text-xs font-bold text-foreground">{stats.successRate}%</p>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1 pl-4 border-l border-border/50 ml-4">
+                        <div className="flex items-center gap-0.5 pl-3 border-l border-black/[0.06] dark:border-white/[0.06] ml-3">
                           <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-foreground-muted hover:text-foreground"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedPipelineId(pipeline.id)
-                            }}
+                            variant="ghost" size="sm"
+                            className="h-8 w-8 p-0 rounded-lg text-foreground-muted hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                            onClick={(e) => { e.stopPropagation(); setSelectedPipelineId(pipeline.id) }}
                           >
                             <Settings className="w-4 h-4" />
                           </Button>
-                          {pipeline.status === "active" || pipeline.status === "running" ? (
+                          {isActive ? (
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-foreground-muted hover:text-error hover:bg-error/10"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleStopPipeline(pipeline.id)
-                              }}
+                              variant="ghost" size="sm"
+                              className="h-8 w-8 p-0 rounded-lg text-foreground-muted hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-100/80 dark:hover:bg-rose-500/15 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleStopPipeline(pipeline.id) }}
                             >
                               <Square className="w-4 h-4" />
                             </Button>
                           ) : (
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-foreground-muted hover:text-primary hover:bg-primary/10"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleTriggerPipeline(pipeline.id, "full_load")
-                              }}
+                              variant="ghost" size="sm"
+                              className="h-8 w-8 p-0 rounded-lg text-foreground-muted hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-100/80 dark:hover:bg-emerald-500/15 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleTriggerPipeline(pipeline.id, "full_load") }}
                             >
                               <Play className="w-4 h-4" />
                             </Button>
