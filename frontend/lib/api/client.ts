@@ -216,6 +216,37 @@ class ApiClient {
     await this.client.delete(`/api/v1/users/${String(userId)}`);
   }
 
+  async importUsers(file: File): Promise<{ imported: number; skipped_duplicates: number; errors: string[]; invitation_tokens: Array<{ email: string; token: string; expires_at: string }> }> {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await this.client.post('/api/v1/users/import', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  async getRoles(): Promise<Array<{ id: string; name: string; description?: string }>> {
+    const response = await this.client.get('/api/v1/roles');
+    return response.data;
+  }
+
+  async createInvitation(data: { email: string; role?: string; workspace_id?: string }): Promise<{ id: string; email: string; token: string; expires_at: string; status: string; role_name?: string; created_at: string }> {
+    const response = await this.client.post('/api/v1/invitations', data);
+    return response.data;
+  }
+
+  async getInvitations(skip = 0, limit = 100, status_filter?: string): Promise<Array<{ id: string; email: string; token: string; expires_at: string; status: string; role_name?: string; created_at: string }>> {
+    const response = await this.client.get('/api/v1/invitations', {
+      params: { skip, limit, status_filter },
+    });
+    return response.data;
+  }
+
+  async acceptInvitation(data: { token: string; password: string; full_name?: string }): Promise<{ access_token: string; refresh_token?: string; token_type: string; expires_in?: number; user: any }> {
+    const response = await this.client.post('/api/v1/invitations/accept', data);
+    return response.data;
+  }
+
   // Track pending requests to prevent duplicates
   private pendingRequests = new Map<string, Promise<any>>();
 

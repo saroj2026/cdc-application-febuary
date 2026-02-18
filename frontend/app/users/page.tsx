@@ -27,12 +27,16 @@ import {
   Circle,
   Activity,
   LayoutGrid,
-  List
+  List,
+  Mail,
+  Upload
 } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { UserModal } from "@/components/users/user-modal"
+import { InviteUserModal } from "@/components/users/invite-user-modal"
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks"
 import { fetchUsers, deleteUser } from "@/lib/store/slices/userSlice"
+import { apiClient } from "@/lib/api/client"
 import { formatDistanceToNow } from "date-fns"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -99,6 +103,10 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeTab, setActiveTab] = useState<"users" | "audit">("users")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importResult, setImportResult] = useState<{ imported: number; skipped_duplicates: number; errors: string[]; invitation_tokens: Array<{ email: string; token: string; expires_at: string }> } | null>(null)
+  const [importLoading, setImportLoading] = useState(false)
   const { showConfirm, ConfirmDialogComponent } = useConfirmDialog()
   const usersPerPage = 8
 
@@ -197,6 +205,31 @@ export default function UsersPage() {
     setEditingUser(null)
   }
 
+  const handleInviteSuccess = () => {
+    dispatch(fetchUsers())
+  }
+
+  const handleImportCsv = async () => {
+    if (!importFile) return
+    setImportLoading(true)
+    setImportResult(null)
+    try {
+      const res = await apiClient.importUsers(importFile)
+      setImportResult(res)
+      dispatch(fetchUsers())
+      setImportFile(null)
+    } catch (err: any) {
+      setImportResult({
+        imported: 0,
+        skipped_duplicates: 0,
+        errors: [err.response?.data?.detail || err.message || "Import failed"],
+        invitation_tokens: [],
+      })
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
   const getRoleDisplayName = (role: string) => {
     return role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
   }
@@ -240,11 +273,21 @@ export default function UsersPage() {
           subtitle="Manage users, roles, and permissions for your CDC replication platform"
           icon={Users}
           action={
-            canCreateUser ? (
-              <Button onClick={handleCreateUser} className="bg-primary hover:bg-primary/90 text-foreground gap-2">
-                <Plus className="w-4 h-4" />
-                New User
-              </Button>
+            canCreateUser || canManageRoles ? (
+              <div className="flex items-center gap-2">
+                {canCreateUser && (
+                  <>
+                    <Button onClick={handleCreateUser} className="bg-primary hover:bg-primary/90 text-foreground gap-2">
+                    <Plus className="w-4 h-4" />
+                    New User
+                  </Button>
+                    <Button variant="outline" onClick={() => setInviteModalOpen(true)} className="gap-2">
+                      <Mail className="w-4 h-4" />
+                      Invite User
+                    </Button>
+                  </>
+                )}
+              </div>
             ) : undefined
           }
         />
@@ -263,6 +306,61 @@ export default function UsersPage() {
           </TabsList>
 
           <TabsContent value="users" className="space-y-6">
+            {/* Import Users (CSV) */}
+            {canCreateUser && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    Import users from CSV
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    CSV format: email, full_name, role (e.g. john@company.com, John Doe, Admin)
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      type="file"
+                      accept=".csv"
+                      className="max-w-xs"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        setImportFile(f || null)
+                        setImportResult(null)
+                      }}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={!importFile || importLoading}
+                      onClick={handleImportCsv}
+                    >
+                      {importLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Importing...
+                        </>
+                      ) : (
+                        "Upload & import"
+                      )}
+                    </Button>
+                  </div>
+                  {importResult && (
+                    <div className="mt-3 p-3 rounded-md bg-muted/50 text-sm">
+                      <p>Imported: {importResult.imported} · Skipped (duplicates): {importResult.skipped_duplicates}</p>
+                      {importResult.errors.length > 0 && (
+                        <p className="text-destructive mt-1">Errors: {importResult.errors.join("; ")}</p>
+                      )}
+                      {importResult.invitation_tokens.length > 0 && (
+                        <p className="text-muted-foreground mt-1">
+                          Invitation tokens created for {importResult.invitation_tokens.length} user(s). Share accept-invite links with token.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Filters */}
             <Card>
               <CardContent className="pt-6">
@@ -574,6 +672,14 @@ export default function UsersPage() {
           />
         ) : null}
 
+        {/* Invite User Modal */}
+        {(canCreateUser || canManageRoles) && (
+          <InviteUserModal
+            isOpen={inviteModalOpen}
+            onClose={() => setInviteModalOpen(false)}
+            onSuccess={handleInviteSuccess}
+          />
+        )}
 
       </div>
     </ProtectedPage>

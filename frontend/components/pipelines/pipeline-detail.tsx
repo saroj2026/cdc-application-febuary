@@ -116,6 +116,9 @@ export function PipelineDetail({ pipeline, onBack }: { pipeline?: Pipeline; onBa
   const progressPollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const [retryingEventId, setRetryingEventId] = useState<string | null>(null)
 
+  const formatStatus = (s: string | undefined) =>
+    (s || "unknown").toString().trim().toLowerCase().replace(/^\w/, (c) => c.toUpperCase())
+
   // Fetch connections if not loaded
   useEffect(() => {
     if (connections.length === 0) {
@@ -1083,7 +1086,7 @@ export function PipelineDetail({ pipeline, onBack }: { pipeline?: Pipeline; onBa
                   (pipeline.status === "active" || pipeline.status === "running") ? "text-emerald-500" :
                     (pipeline.status === "paused") ? "text-amber-500" : "text-red-500"
                 )}>
-                  {(pipeline.status || 'UNKNOWN').toUpperCase()}
+                  {formatStatus(pipeline.status)}
                 </span>
                 <div className={cn(
                   "w-3 h-3 rounded-full animate-ping shadow-[0_0_10px_currentColor]",
@@ -2100,7 +2103,7 @@ export function PipelineDetail({ pipeline, onBack }: { pipeline?: Pipeline; onBa
         {[
           {
             label: "Status",
-            value: pipeline.status || "Unknown",
+            value: formatStatus(pipeline.status),
             gradient: (pipeline.status === "active" || pipeline.status === "running" || pipeline.status === "starting")
               ? "from-cyan-500/10 to-cyan-600/5"
               : (pipeline.status === "paused")
@@ -2274,7 +2277,7 @@ export function PipelineDetail({ pipeline, onBack }: { pipeline?: Pipeline; onBa
                   Active
                 </>
               ) : (
-                pipeline.status
+                formatStatus(pipeline.status)
               )}
             </Badge>
           </div>

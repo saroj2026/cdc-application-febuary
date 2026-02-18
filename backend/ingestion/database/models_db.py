@@ -292,33 +292,84 @@ class AuditLogModel(Base):
     )
 
 
+class UserStatusEnum(str, enum.Enum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    DISABLED = "DISABLED"
+
+
+class InvitationStatusEnum(str, enum.Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    EXPIRED = "EXPIRED"
+
+
+class RoleModel(Base):
+    """Role model for RBAC."""
+    __tablename__ = "roles"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    user_roles = relationship("UserRoleModel", back_populates="role", cascade="all, delete-orphan")
+
+
+class UserRoleModel(Base):
+    """User-role assignment with optional workspace scope."""
+    __tablename__ = "user_roles"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role_id = Column(String(36), ForeignKey("roles.id", ondelete="CASCADE"), nullable=False, index=True)
+    workspace_id = Column(String(36), nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    role = relationship("RoleModel", back_populates="user_roles")
+    __table_args__ = (Index("idx_user_roles_user_workspace", "user_id", "workspace_id"),)
+
+
+class InvitationModel(Base):
+    """Invitation for new users (invite link with token)."""
+    __tablename__ = "invitations"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String(255), nullable=False, index=True)
+    invited_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    token = Column(String(255), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    status = Column(
+        SQLEnum(InvitationStatusEnum, values_callable=lambda x: [e.value for e in x]),
+        default=InvitationStatusEnum.PENDING,
+        nullable=False,
+    )
+    role_name = Column(String(50), nullable=True)  # Role to assign on accept
+    workspace_id = Column(String(36), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    accepted_at = Column(DateTime, nullable=True)
+
+
 class UserModel(Base):
     """User model for authentication and authorization.
     
-    Note: New columns (tenant_id, status, last_login) are nullable for backward compatibility.
-    Run the migration script to add these columns to the database.
+    Note: New columns (tenant_id, status, last_login, is_external) are nullable for backward compatibility.
+    hashed_password can be NULL for PENDING (invited) users until they set password.
     """
     __tablename__ = "users"
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
     full_name = Column(String(255), nullable=False)
-    hashed_password = Column(Text, nullable=False)
+    hashed_password = Column(Text, nullable=True)  # NULL for PENDING/invited users
     role_name = Column(String(50), nullable=False, default="user")  # 'user', 'operator', 'viewer', 'admin'
     is_active = Column(Boolean, default=True, nullable=False)
     is_superuser = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
-    # New columns - added via migration (nullable for backward compatibility)
-    # These will be None until migration is run
-    tenant_id = Column(String(36), nullable=True)  # Tenant isolation (UUID as string)
-    status = Column(String(20), nullable=True)  # User status (INVITED, ACTIVE, SUSPENDED, DEACTIVATED)
-    last_login = Column(DateTime, nullable=True)  # Last login timestamp
+    tenant_id = Column(String(36), nullable=True)
+    status = Column(String(20), nullable=True)  # PENDING, ACTIVE, DISABLED (or legacy INVITED, SUSPENDED, DEACTIVATED)
+    last_login = Column(DateTime, nullable=True)
+    is_external = Column(Boolean, default=False, nullable=False)  # True for imported/invited users
     
-    __table_args__ = (
-        Index('idx_users_email', 'email'),
-    )
+    __table_args__ = (Index('idx_users_email', 'email'),)
 
 
 class ApplicationLogModel(Base):

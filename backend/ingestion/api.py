@@ -157,12 +157,21 @@ from ingestion.models import Connection, Pipeline, PipelineStatus, FullLoadStatu
 
 from ingestion.database import get_db
 
-from ingestion.database.models_db import ConnectionModel, PipelineModel, UserModel, AuditLogModel
+from ingestion.database.models_db import (
+    ConnectionModel,
+    PipelineModel,
+    UserModel,
+    AuditLogModel,
+    RoleModel,
+    InvitationModel,
+    InvitationStatusEnum,
+)
 
 from sqlalchemy.orm import Session
 
+import csv
 import hashlib
-
+import io
 import secrets
 
 import os
@@ -11797,7 +11806,337 @@ def change_user_password(
         )
 
 
+# -------- User Management: Import, Roles, Invitations --------
 
+class UserImportRow(BaseModel):
+    email: str
+    full_name: str
+    role: str = "viewer"
+
+
+class UserImportResponse(BaseModel):
+    imported: int
+    skipped_duplicates: int
+    errors: List[str]
+    invitation_tokens: List[Dict[str, Any]]
+
+
+class RoleResponse(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+
+
+class InvitationCreate(BaseModel):
+    email: str
+    role: str = "viewer"
+    workspace_id: Optional[str] = None
+
+
+class InvitationResponse(BaseModel):
+    id: str
+    email: str
+    token: str
+    expires_at: str
+    status: str
+    role_name: Optional[str] = None
+    created_at: str
+
+
+class InvitationAcceptRequest(BaseModel):
+    token: str
+    password: str
+    full_name: Optional[str] = None
+
+
+@app.post("/api/v1/users/import", response_model=UserImportResponse)
+async def import_users(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Import users from CSV (email, full_name, role). Creates users with status PENDING and sends invite."""
+    try:
+        from ingestion.auth.middleware import get_optional_user
+        from ingestion.auth.permissions import require_admin
+        current_user = get_optional_user(db=db)
+        if current_user:
+            require_admin(current_user=current_user)
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+    content_type = request.headers.get("content-type", "")
+    if "multipart/form-data" not in content_type and "text/csv" not in content_type:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Send CSV file as multipart/form-data or text/csv")
+    body = b""
+    try:
+        if "multipart/form-data" in content_type:
+            form = await request.form()
+            file = form.get("file") or form.get("csv")
+            if not file or not hasattr(file, "read"):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing file in form (key: file or csv)")
+            body = (await file.read()) if hasattr(file, "read") else b""
+        else:
+            body = await request.body()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to read file: {e}")
+    if not body:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file")
+    valid_roles = ["user", "operator", "viewer", "admin", "super_admin", "org_admin", "data_engineer"]
+    imported = 0
+    skipped_duplicates = 0
+    errors = []
+    invitation_tokens = []
+    try:
+        text_content = body.decode("utf-8", errors="replace")
+        reader = csv.DictReader(io.StringIO(text_content))
+        rows = list(reader)
+        if not rows:
+            return UserImportResponse(imported=0, skipped_duplicates=0, errors=["CSV has no data rows"], invitation_tokens=[])
+        for row in rows:
+            email = (row.get("email") or "").strip().lower()
+            full_name = (row.get("full_name") or row.get("full name") or "").strip()
+            role = (row.get("role") or "viewer").strip().lower()
+            if role not in valid_roles:
+                role = "viewer"
+            if not email or "@" not in email:
+                errors.append(f"Invalid email: {row}")
+                continue
+            if not full_name:
+                full_name = email.split("@")[0]
+            existing = db.query(UserModel).filter(UserModel.email == email).first()
+            if existing:
+                skipped_duplicates += 1
+                continue
+            token = secrets.token_urlsafe(32)
+            expires_at = datetime.utcnow() + timedelta(days=7)
+            new_user = UserModel(
+                id=str(uuid.uuid4()),
+                email=email,
+                full_name=full_name,
+                hashed_password=None,
+                role_name=role,
+                is_active=False,
+                is_superuser=role in ["admin", "super_admin"],
+                status="PENDING",
+                is_external=True,
+            )
+            db.add(new_user)
+            inv = InvitationModel(
+                id=str(uuid.uuid4()),
+                email=email,
+                invited_by=current_user.id if current_user else None,
+                token=token,
+                expires_at=expires_at,
+                status=InvitationStatusEnum.PENDING,
+                role_name=role,
+            )
+            db.add(inv)
+            imported += 1
+            invitation_tokens.append({"email": email, "token": token, "expires_at": expires_at.isoformat()})
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error importing users: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    return UserImportResponse(imported=imported, skipped_duplicates=skipped_duplicates, errors=errors, invitation_tokens=invitation_tokens)
+
+
+def _builtin_roles():
+    builtin = [
+        ("admin", "Full platform access"),
+        ("super_admin", "Platform owner"),
+        ("org_admin", "Organization admin"),
+        ("data_engineer", "Create pipelines, CDC"),
+        ("operator", "Run pipelines, monitor"),
+        ("viewer", "Read-only"),
+        ("user", "Basic user"),
+    ]
+    return [RoleResponse(id=str(uuid.uuid4()), name=name, description=desc) for name, desc in builtin]
+
+
+@app.get("/api/v1/roles", response_model=List[RoleResponse])
+def list_roles(db: Session = Depends(get_db)):
+    """List all roles. Returns built-in roles if roles table is empty or missing."""
+    try:
+        if db is None:
+            return _builtin_roles()
+        roles = db.query(RoleModel).all()
+        if roles:
+            return [RoleResponse(id=r.id, name=r.name, description=r.description) for r in roles]
+        return _builtin_roles()
+    except Exception as e:
+        logger.warning(f"Roles table may not exist yet: {e}")
+        return _builtin_roles()
+
+
+@app.post("/api/v1/invitations", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED)
+def create_invitation(
+    data: InvitationCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Send invitation to a user. Creates invitation record and returns token/link."""
+    try:
+        from ingestion.auth.middleware import get_optional_user
+        from ingestion.auth.permissions import require_admin
+        current_user = get_optional_user(db=db)
+        if not current_user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+        require_admin(current_user=current_user)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+    valid_roles = ["user", "operator", "viewer", "admin", "super_admin", "org_admin", "data_engineer"]
+    role = data.role if data.role in valid_roles else "viewer"
+    email = data.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email")
+    existing_user = db.query(UserModel).filter(UserModel.email == email).first()
+    if existing_user and existing_user.hashed_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists and is active")
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(days=7)
+    if not existing_user:
+        new_user = UserModel(
+            id=str(uuid.uuid4()),
+            email=email,
+            full_name=email.split("@")[0],
+            hashed_password=None,
+            role_name=role,
+            is_active=False,
+            is_superuser=role in ["admin", "super_admin"],
+            status="PENDING",
+            is_external=True,
+        )
+        db.add(new_user)
+        db.flush()
+    inv = InvitationModel(
+        id=str(uuid.uuid4()),
+        email=email,
+        invited_by=current_user.id,
+        token=token,
+        expires_at=expires_at,
+        status=InvitationStatusEnum.PENDING,
+        role_name=role,
+        workspace_id=data.workspace_id,
+    )
+    db.add(inv)
+    db.commit()
+    db.refresh(inv)
+    return InvitationResponse(
+        id=inv.id,
+        email=inv.email,
+        token=inv.token,
+        expires_at=inv.expires_at.isoformat(),
+        status=inv.status.value,
+        role_name=inv.role_name,
+        created_at=inv.created_at.isoformat(),
+    )
+
+
+@app.get("/api/v1/invitations", response_model=List[InvitationResponse])
+def list_invitations(
+    skip: int = 0,
+    limit: int = 100,
+    status_filter: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """List invitations (admin only)."""
+    try:
+        from ingestion.auth.middleware import get_optional_user
+        from ingestion.auth.permissions import require_admin
+        current_user = get_optional_user(db=db)
+        if not current_user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+        require_admin(current_user=current_user)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+    q = db.query(InvitationModel).order_by(InvitationModel.created_at.desc())
+    if status_filter:
+        q = q.filter(InvitationModel.status == status_filter)
+    invitations = q.offset(skip).limit(limit).all()
+    return [
+        InvitationResponse(
+            id=inv.id,
+            email=inv.email,
+            token=inv.token,
+            expires_at=inv.expires_at.isoformat(),
+            status=inv.status.value,
+            role_name=inv.role_name,
+            created_at=inv.created_at.isoformat(),
+        )
+        for inv in invitations
+    ]
+
+
+@app.post("/api/v1/invitations/accept")
+def accept_invitation(data: InvitationAcceptRequest, db: Session = Depends(get_db)):
+    """Accept invite: validate token, set password, activate user, return JWT."""
+    inv = db.query(InvitationModel).filter(InvitationModel.token == data.token.strip()).first()
+    if not inv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid or expired invitation token")
+    if inv.status != InvitationStatusEnum.PENDING:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already used or expired")
+    if inv.expires_at < datetime.utcnow():
+        inv.status = InvitationStatusEnum.EXPIRED
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation has expired")
+    user = db.query(UserModel).filter(UserModel.email == inv.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User record not found")
+    is_valid, msg = validate_password_strength(data.password)
+    if not is_valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
+    user.hashed_password = hash_password(data.password)
+    user.full_name = (data.full_name or user.full_name or inv.email.split("@")[0]).strip()
+    user.is_active = True
+    user.status = "ACTIVE"
+    inv.status = InvitationStatusEnum.ACCEPTED
+    inv.accepted_at = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
+    access_token_expiry_minutes = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRATION_MINUTES", "30"))
+    refresh_token_expiry_days = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRATION_DAYS", "7"))
+    secret_key = os.getenv("JWT_SECRET_KEY", os.getenv("SECRET_KEY", "dev-secret-key-change-in-production"))
+    if not JWT_AVAILABLE:
+        import base64
+        token_data = f"{user.id}:{user.email}:{datetime.utcnow().isoformat()}"
+        access_token = base64.b64encode(token_data.encode()).decode()
+        refresh_token = None
+    else:
+        access_token_data = {
+            "sub": user.id,
+            "email": user.email,
+            "role": user.role_name,
+            "type": "access",
+            "exp": datetime.utcnow() + timedelta(minutes=access_token_expiry_minutes),
+            "iat": datetime.utcnow(),
+        }
+        access_token = jwt.encode(access_token_data, secret_key, algorithm="HS256")
+        refresh_token_data = {
+            "sub": user.id,
+            "email": user.email,
+            "type": "refresh",
+            "exp": datetime.utcnow() + timedelta(days=refresh_token_expiry_days),
+            "iat": datetime.utcnow(),
+        }
+        refresh_token = jwt.encode(refresh_token_data, secret_key, algorithm="HS256")
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": access_token_expiry_minutes * 60,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role_name": user.role_name,
+            "is_active": user.is_active,
+            "is_superuser": user.is_superuser,
+            "created_at": user.created_at.isoformat(),
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+        },
+    }
 
 
 # Authentication endpoints
@@ -12015,6 +12354,13 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
             )
 
         
+
+        # Reject PENDING users who have not set password (invited users must accept invite first)
+        if not user.hashed_password:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is pending. Please use the invitation link to set your password."
+            )
 
         # Verify password
 
